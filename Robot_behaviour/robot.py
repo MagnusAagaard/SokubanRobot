@@ -11,11 +11,14 @@ class LegoRobot:
 		self._setup_sensors()
 		self._setup_motors()
 		self._setup_shutdowns()
-		self.white = 76
+		self.white = 73
 		self.black = 5
 		self.solution = solution
 		#Orientations: 1 = up, 2 = right, 3 = down, 4 = left
 		self.robot_orientation = 1
+		self.straight_left = 24
+		self.straight_right = 28
+		self.follow_left_sensor = True 
 
 	def _setup_sensors(self):
 		self.mA = LargeMotor('outA')
@@ -46,12 +49,19 @@ class LegoRobot:
 		exit(0)
 
 	def follow_line(self):
-		sensorLeft = self.lightSensorLeft.value()
-		sensorRight = self.lightSensorRight.value()
-		threshold = (self.white-self.black)/2
-
-		self.mD.duty_cycle_sp = self.BASE_SPEED - 0.2*(sensorLeft-threshold)
-		self.mA.duty_cycle_sp = self.BASE_SPEED + 0.2*(sensorLeft-threshold)
+		cross_detected = False
+		cross_left = not self.check_cross()
+		while not cross_detected:
+			self.check_touch()
+			threshold = (self.white-self.black)/2
+			if not self.check_cross():
+				cross_left=True
+			if cross_left:
+				cross_detected = self.check_cross()
+			sensorLeft = self.lightSensorLeft.value()
+			sensorRight = self.lightSensorRight.value()
+			self.mD.duty_cycle_sp = self.BASE_SPEED - 0.20*(sensorLeft-threshold)
+			self.mA.duty_cycle_sp = self.BASE_SPEED + 0.20*(sensorLeft-threshold)
 
 
 	def check_touch(self):
@@ -75,34 +85,69 @@ class LegoRobot:
 		self._setup_motors()
 
 	def turn_right(self):
-		self.go_straight(29)
+		dist=self.straight_right
+		self.go_straight(dist)
 		self.mdiff.turn_right(self.TURN_SPEED, 90)
 		self._setup_motors()
 
 	def turn_left(self):
-		self.go_straight(35)
+		dist=self.straight_left
+		self.go_straight(dist)
 		self.mdiff.turn_left(self.TURN_SPEED, 90)
 		self._setup_motors()
 
 	def turn_around(self):
 		self.mdiff.turn_left(self.TURN_SPEED, 180)
+		self.follow_left_sensor = not self.follow_left_sensor
 		self._setup_motors()
+	
+	def move_can(self):
+		self.go_straight(195)
+		self.go_straight(-195)
+	
+	def solve(self):
+		orientations = {'u': 1, 'r': 2, 'd': 3, 'l': 4, 'U': 1, 'R': 2, 'D': 3, 'L': 4}
+		self.follow_line()
+		for step in self.solution:
+			self.check_touch()
+			desired_ori=orientations.get(step)
+			ori_change = desired_ori - self.robot_orientation
+			self.robot_orientation = desired_ori
+			if (ori_change == 1 or ori_change == -3):
+				self.turn_right()
+				self.follow_line()
+				print ("turning right")
+			elif (ori_change == 2 or ori_change == -2):
+				self.turn_around()
+				self.follow_line()
+				print("180 no scope")
+			elif (ori_change == -1 or ori_change == 3):
+				self.turn_left()
+				self.follow_line()
+				print("turning left")
+			else:
+				self.follow_line()
+				print("going straight")
+			if step == 'L' or step == 'U' or step == 'R' or step == 'D':
+				self.move_can() 
+
+
 
 if __name__ == "__main__":
-	lr = LegoRobot("Sol")
+	lr = LegoRobot("llllUdrruLdldlluRRRRRdrUUruulldRRdldlluluulldRurDDrdLLdlluRRRRRdrUUruulldRurDurrdLulldddllululDrdLdlluRRRRRdrUUdllulullDrddlluRRRRRdrU")
 	cross_detected = False
 	cross_detected2 = False
-	while True:
-		lr.check_touch()
-		lr.follow_line()
-		cross_detected = lr.check_cross()
-		if cross_detected:
-			lr.go_straight(-280)
-			#lr.turn_around()
-			while True:
-				lr.check_touch()
-				lr.follow_line()
-				cross_detected2 = lr.check_cross()
-				if cross_detected2:
-					lr.turn_left()
+	lr.solve()
+	print('Shutting down gracefully')
+	lr.mA.duty_cycle_sp = 0
+	lr.mD.duty_cycle_sp = 0
+	exit(0)
+#	while True:
+#		lr.check_touch()
+#		lr.follow_line()
+#		print("Left")
+#		print(lr.lightSensorLeft.value())
+#		print("right")
+#		print(lr.lightSensorRight.value())
+#		lr.turn_left()
 
