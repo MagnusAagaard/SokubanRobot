@@ -3,33 +3,41 @@
 import os
 import numpy as np
 import itertools
+import time
 
 class Node:
-    def __init__(self, parent, cans, robot, hash_val, move):
+    def __init__(self, parent, hash_val, move):
         self.parent = parent
         self.hash = hash_val
-        self.cans = cans
-        self.robot = robot
         self.hCost = 0
         self.calc_h_cost()
         if self.parent != None:
             self.gCost = parent.gCost + 1
-            self.moves = list(parent.moves)
-            self.moves.append(move)
+            self.move = move
         else:
             self.gCost = 0
-            self.moves = []
         self.fCost = self.hCost + self.gCost
 
     def calc_h_cost(self):
         self.hCost = 0
+
+    def get_cans(self):
+        cans_hash = self.hash[4:]
+        cans = list()
+        for i in range(0,len(cans_hash),4):
+            cans.append((int(cans_hash[i:i+2]), int(cans_hash[i+2:i+4])))
+        return cans
+
+    def get_robot(self):
+        robot_hash = self.hash[:4]
+        return (int(robot_hash[0:2]), int(robot_hash[2:4]))
 
 
 class SokubanSolver:
     def __init__(self, map_file_path):
         self.map = []
         self.can_positions = []
-        self.goal_positions = []
+        self.goal_positions = list()
         self.robot_position = 0
         self._setup(map_file_path)
         self.closed_list = {}
@@ -55,11 +63,11 @@ class SokubanSolver:
                     col = 0
                 else:
                     if char == 'J':
-                        self.can_positions.append([row, col])
+                        self.can_positions.append((row, col))
                     elif char == 'G':
-                        self.goal_positions.append([row,col])
+                        self.goal_positions.append((row,col))
                     elif char == 'M':
-                        self.robot_position = [row,col]
+                        self.robot_position = (row,col)
                     row_chars.append(char)
                     col += 1
         #self.goal_positions = np.asarray(self.goal_positions)
@@ -90,7 +98,7 @@ class SokubanSolver:
 
     def breath_first(self):
         root_hash = self.create_hash(self.can_positions, self.robot_position)
-        root = Node(None, self.can_positions, self.robot_position, root_hash, None)
+        root = Node(None, root_hash, None)
         self.open_list[root_hash] = root
         count = 0
 
@@ -98,49 +106,53 @@ class SokubanSolver:
             count += 1
             current_node_hash = next(iter(self.open_list))
             current_node = self.open_list.pop(current_node_hash)
-            self.closed_list[current_node_hash] = current_node
-
-            rob = list(current_node.robot)
-            moves = [(1,0),(-1,0),(0,1),(0,-1)]
-            for move in moves:
-                cans = list(current_node.cans)
-                rob_new = [rob[0] + move[0], rob[1] + move[1]]
-                child = Node(current_node, cans, rob_new, self.create_hash(cans, rob_new), move)
-                legal_move = self.check_legal_move(child, move)
-                if legal_move:
-                    child_hash = self.create_hash(child.cans, rob_new)
-                    if self.closed_list.get(child_hash) == None:
-                        self.open_list[child_hash] = child
-            
-            self.trace_solution(current_node)
+            if count % 100000 == 0:
+                self.trace_solution(current_node)
             if self.check_solved(current_node):
                 sol = self.trace_solution(current_node)
                 return sol
-
+            self.closed_list[current_node_hash] = current_node
+            rob = current_node.get_robot()
+            moves = [(1,0),(-1,0),(0,1),(0,-1)]
+            for move in moves:
+                cans = current_node.get_cans()
+                rob_new = [rob[0] + move[0], rob[1] + move[1]]
+                child = Node(current_node, self.create_hash(cans, rob_new), move)
+                legal_move = self.check_legal_move(child, move)
+                if legal_move:
+                    child_hash = child.hash
+                    if self.closed_list.get(child_hash) == None:
+                        self.open_list[child_hash] = child
+            
         print(count)
         return -1
                     
 
     def check_legal_move(self, child, move):
         map_array = self.map
-        char = map_array[child.robot[0]][child.robot[1]]
+        child_robot = child.get_robot()
+        char = map_array[child_robot[0]][child_robot[1]]
         if char == 'X':
             return False
-        for i in range(len(child.cans)):
-            if child.robot == child.cans[i]:
-                can_new = [child.robot[0] + move[0], child.robot[1] + move[1]]
-                for j in range(len(child.cans)):
-                    if can_new == child.cans[j]:
+        child_cans = child.get_cans()
+        for i in range(len(child_cans)):
+            if child_robot == child_cans[i]:
+                can_new = (child_robot[0] + move[0], child_robot[1] + move[1])
+                for j in range(len(child_cans)):
+                    if can_new == child_cans[j]:
                         return False
                 char = map_array[can_new[0]][can_new[1]]
                 if char == 'X':
                     return False
-                child.cans[i] = can_new
+                child_cans[i] = can_new
+                child_hash = self.create_hash(child_cans, child_robot)
+                child.hash = child_hash
+                return True
         return True
 
 
     def check_solved(self, node):
-        cans = node.cans
+        cans = node.get_cans()
         goals = self.goal_positions
         number_of_goals = 0
         for can in cans:
@@ -154,15 +166,15 @@ class SokubanSolver:
             return False
 
     def trace_solution(self, node):
-        sol = []
+        moves = []
         translated_moves = ""
         current_node = node
         while current_node.parent != None:
-            sol.append(current_node.robot)
+            moves.append(current_node.move)
             current_node = current_node.parent
 
-        sol.reverse()
-        for move in node.moves:
+        moves.reverse()
+        for move in moves:
             if move == (-1,0):
                 translated_moves += 'u'
             elif move == (1,0):
@@ -174,10 +186,11 @@ class SokubanSolver:
 
         print(len(translated_moves))
 
-        return sol
+        return translated_moves
 
 
     def create_hash(self, cans, robot):
+        #robot_postion (0x,0y), cans ((0x1,0y1), (0x2,0y2)...) 
         hash_val = ""
         if robot[0] < 10:
             hash_val += "0" + str(robot[0])
@@ -204,5 +217,9 @@ class SokubanSolver:
     
 
 if __name__ == "__main__":
+    #Problemer? Check hård og blød paranteser ;)
     map_file_path = "./AI/map.txt"
+    tic = time.perf_counter()
     solver = SokubanSolver(map_file_path)
+    toc = time.perf_counter()
+    print(f"Solved in {toc - tic:0.4f} seconds")
