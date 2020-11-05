@@ -181,6 +181,7 @@ if __name__ == "__main__":
 	#Hvis problemer, rens hjul og lad batteriet fuldt op
 
 	#Næste gang, lav vores straight om til at bruge noget andet til at køre frem. Enten sæt lys sensor ved aksen, eller lav med tid.
+	#En lys sensor i midten i stedet for 2, og så bare ikke have sleep efter den drejer til venstre men kun når den drejer til højre
 	lr = LegoRobot("llllUddlluRRRRRdrUUruulldRRlddlluLuulldRurDDullDRdRRRdrUUruurrdLulDulldRddlllldlluRRRRRdrUUdlllluurDldRRRdrU")
 #	lr = LegoRobot("uldruldruldruldruldruldruldruldruldruldruldruldruldruldr") #left test
 #	lr = LegoRobot("rdlurdlurdlurdlurdlurdlurdlurdlurdlurdlurdlurdlurdlurdlu") #right test
