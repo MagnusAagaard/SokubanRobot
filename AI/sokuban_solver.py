@@ -68,13 +68,111 @@ class SokubanSolver:
                         self.goal_positions.append((row,col))
                     elif char == 'M':
                         self.robot_position = (row,col)
+                        char = '.'
                     row_chars.append(char)
                     col += 1
         #self.goal_positions = np.asarray(self.goal_positions)
         #self.can_positions = np.asarray(self.can_positions)
         print("Map loaded:")
+        self.deadlocks_detection()
         for r in self.map:
             print(r)
+
+    def deadlocks_detection(self):
+        outer_row_top = 0
+        outer_row_bot = 0
+        outer_col_left = 0
+        outer_col_right = 0
+        row_flag_top = True
+        row_flag_bot = True
+        col_flag_left = True
+        col_flag_right = True
+        goal_flag_top = False
+        goal_flag_bot = False
+        goal_flag_left = False
+        goal_flag_right = False
+
+        #Finding outer row/col consisting of only x. And checking if next row/col have a goal
+        for i in range(len(self.map)):
+            for j in range(len(self.map[0])):
+                if self.map[i][j] != 'X':
+                    row_flag_top = False
+            if row_flag_top:
+                for j in range(len(self.map[0])):
+                    if self.map[i+1][j] == 'G':
+                        goal_flag_top = True
+                if goal_flag_top:
+                    outer_row_top = i
+                else:
+                    outer_row_top = i+1
+                
+
+        for i in range(len(self.map),0,-1):
+            for j in range(len(self.map[0])):
+                if self.map[i-1][j] != 'X':
+                    row_flag_bot = False
+            if row_flag_bot:
+                for j in range(len(self.map[0])):
+                    if self.map[i-2][j] == 'G':
+                        goal_flag_bot = True
+                if goal_flag_bot:
+                    outer_row_bot = i-1
+                else:
+                    outer_row_bot = i-2
+
+        for i in range(len(self.map[0])):
+            for j in range(len(self.map)):
+                if self.map[j][i] != 'X':
+                    col_flag_left = False
+            if col_flag_left:
+                for j in range(len(self.map)):
+                    if self.map[j][i+1] == 'G':
+                        goal_flag_left = True
+                if goal_flag_left:
+                    outer_col_left = i
+                else:
+                    outer_col_left = i+1
+
+        for i in range(len(self.map[0]),0,-1):
+            for j in range(len(self.map)):
+                if self.map[j][i-1] != 'X':
+                    col_flag_right = False
+            if col_flag_right:
+                for j in range(len(self.map)):
+                    if self.map[j][i-2] == 'G':
+                        goal_flag_right = True
+                if goal_flag_right:
+                    outer_col_right = i-1
+                else:
+                    outer_col_right = i-2
+        
+        for i in range(len(self.map)):
+            if self.map[i][outer_col_left] == '.':
+                self.map[i][outer_col_left] = 'd'
+            if self.map[i][outer_col_right] == '.':
+                self.map[i][outer_col_right] = 'd'
+
+        for i in range(len(self.map[0])):
+            if self.map[outer_row_top][i] == '.':
+                self.map[outer_row_top][i] = 'd'
+            if self.map[outer_row_bot][i] == '.':
+                self.map[outer_row_bot][i] = 'd'
+
+        #Check for corner deadlock
+        for i in range(1,len(self.map)-1):
+            for j in range(1,len(self.map[0])-1):
+                if (self.map[i][j] == '.'):
+                    count = 0
+                    if (self.map[i-1][j] == 'X'):
+                        count += 1
+                    if (self.map[i+1][j] == 'X'):
+                        count += 1
+                    if (self.map[i][j-1] == 'X'):
+                        count += 1
+                    if (self.map[i][j+1] == 'X'):
+                        count += 1
+                    if (count >= 2):
+                        self.map[i][j] = 'd'
 
     def find_goals(self):
         costs = []
@@ -110,6 +208,7 @@ class SokubanSolver:
                 self.trace_solution(current_node)
             if self.check_solved(current_node):
                 sol = self.trace_solution(current_node)
+                print(count)
                 return sol
             self.closed_list[current_node_hash] = current_node
             rob = current_node.get_robot()
@@ -124,7 +223,6 @@ class SokubanSolver:
                     if self.closed_list.get(child_hash) == None:
                         self.open_list[child_hash] = child
             
-        print(count)
         return -1
                     
 
@@ -142,7 +240,7 @@ class SokubanSolver:
                     if can_new == child_cans[j]:
                         return False
                 char = map_array[can_new[0]][can_new[1]]
-                if char == 'X':
+                if char == 'X' or char == 'd':
                     return False
                 child_cans[i] = can_new
                 child_hash = self.create_hash(child_cans, child_robot)
