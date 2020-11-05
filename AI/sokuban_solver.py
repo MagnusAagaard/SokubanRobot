@@ -216,7 +216,15 @@ class SokubanSolver:
             for move in moves:
                 cans = current_node.get_cans()
                 rob_new = [rob[0] + move[0], rob[1] + move[1]]
-                child = Node(current_node, self.create_hash(cans, rob_new), move)
+                if move == (-1,0):
+                    translated_moves = 'u'
+                elif move == (1,0):
+                    translated_moves = 'd'
+                elif move == (0,1):
+                    translated_moves = 'r'
+                elif move== (0,-1):
+                    translated_moves = 'l'
+                child = Node(current_node, self.create_hash(cans, rob_new), translated_moves)
                 legal_move = self.check_legal_move(child, move)
                 if legal_move:
                     child_hash = child.hash
@@ -245,6 +253,7 @@ class SokubanSolver:
                 child_cans[i] = can_new
                 child_hash = self.create_hash(child_cans, child_robot)
                 child.hash = child_hash
+                child.move = child.move.upper()
                 return True
         return True
 
@@ -264,27 +273,18 @@ class SokubanSolver:
             return False
 
     def trace_solution(self, node):
-        moves = []
-        translated_moves = ""
+        moves = ""
         current_node = node
         while current_node.parent != None:
-            moves.append(current_node.move)
+            moves += current_node.move
             current_node = current_node.parent
 
-        moves.reverse()
-        for move in moves:
-            if move == (-1,0):
-                translated_moves += 'u'
-            elif move == (1,0):
-                translated_moves += 'd'
-            elif move == (0,1):
-                translated_moves += 'r'
-            elif move== (0,-1):
-                translated_moves += 'l'
+        reversed_moves = ""
+        for i in range(len(moves),0,-1):
+            reversed_moves+=moves[i-1]
+        print(len(reversed_moves))
 
-        print(len(translated_moves))
-
-        return translated_moves
+        return reversed_moves
 
 
     def create_hash(self, cans, robot):

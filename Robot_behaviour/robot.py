@@ -149,7 +149,7 @@ class LegoRobot:
 
 if __name__ == "__main__":
 	#Hvis problemer, rens hjul og lad batteriet fuldt op
-	lr = LegoRobot("llllUdrruLdldlluRRRRRdrUUruulldRRdldlluluulldRurDDrdLLdlluRRRRRdrUUruulldRurDurrdLulldddllululDrdLdlluRRRRRdrUUdllulullDrddlluRRRRRdrU")
+	lr = LegoRobot("llllUddlluRRRRRdrUUruulldRRlddlluLuulldRurDDullDRdRRRdrUUruurrdLulDulldRddlllldlluRRRRRdrUUdlllluurDldRRRdrU")
 #	lr = LegoRobot("uldruldruldruldruldruldruldruldruldruldruldruldruldruldr") #left test
 #	lr = LegoRobot("rdlurdlurdlurdlurdlurdlurdlurdlurdlurdlurdlurdlurdlurdlu") #right test
 	lr.solve()
