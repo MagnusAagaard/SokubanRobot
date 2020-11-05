@@ -11,19 +11,19 @@ class LegoRobot:
 		self._setup_sensors()
 		self._setup_motors()
 		self._setup_shutdowns()
-		self.white = 73
+		self.white = 72
 		self.black = 5
 		self.solution = solution
+		self.simplify()
 		#Orientations: 1 = up, 2 = right, 3 = down, 4 = left
 		self.robot_orientation = 1
-		self.straight_left = 24
-		self.straight_right = 28
-		self.follow_left_sensor = True 
+		self.straight_left = 26
+		self.straight_right = 36
 
 	def _setup_sensors(self):
 		self.mA = LargeMotor('outA')
 		self.mD = LargeMotor('outD')
-		self.mdiff = MoveDifferential(OUTPUT_A, OUTPUT_D, EV3Tire, 87)
+		self.mdiff = MoveDifferential(OUTPUT_A, OUTPUT_D, EV3Tire, 82) #87 tidligere
 		self.touchSensor = TouchSensor('in3')
 		self.lightSensorLeft = ColorSensor('in1')
 		self.lightSensorRight = ColorSensor('in4')
@@ -49,19 +49,21 @@ class LegoRobot:
 		exit(0)
 
 	def follow_line(self):
+		self.sensorLeft = self.lightSensorLeft.value()
+		self.sensorRight = self.lightSensorRight.value()
 		cross_detected = False
 		cross_left = not self.check_cross()
 		while not cross_detected:
-			self.check_touch()
-			threshold = (self.white-self.black)/2
+			#self.check_touch()
+			self.sensorLeft = self.lightSensorLeft.value()
+			self.sensorRight = self.lightSensorRight.value()
+			threshold = (self.white-self.black)/2-5
 			if not self.check_cross():
 				cross_left=True
 			if cross_left:
 				cross_detected = self.check_cross()
-			sensorLeft = self.lightSensorLeft.value()
-			sensorRight = self.lightSensorRight.value()
-			self.mD.duty_cycle_sp = self.BASE_SPEED - 0.20*(sensorLeft-threshold)
-			self.mA.duty_cycle_sp = self.BASE_SPEED + 0.20*(sensorLeft-threshold)
+			self.mD.duty_cycle_sp = self.BASE_SPEED - 0.20*(self.sensorLeft-threshold)
+			self.mA.duty_cycle_sp = self.BASE_SPEED + 0.20*(self.sensorLeft-threshold)
 
 
 	def check_touch(self):
@@ -73,9 +75,7 @@ class LegoRobot:
 			exit(0)
 
 	def check_cross(self):
-		sensorLeft = self.lightSensorLeft.value()
-		sensorRight = self.lightSensorRight.value()
-		if sensorLeft < self.black + 10 and sensorRight < self.black + 10:
+		if self.sensorRight < self.black + 37:
 			return True
 		else:
 			return False
@@ -98,7 +98,6 @@ class LegoRobot:
 
 	def turn_around(self):
 		self.mdiff.turn_left(self.TURN_SPEED, 180)
-		self.follow_left_sensor = not self.follow_left_sensor
 		self._setup_motors()
 	
 	def move_can(self):
@@ -130,13 +129,29 @@ class LegoRobot:
 				print("going straight")
 			if step == 'L' or step == 'U' or step == 'R' or step == 'D':
 				self.move_can() 
+	
+	def simplify(self):
+		for i in range(len(self.solution)-1):
+			if (self.solution[i] == self.solution[i+1]):
+				char = self.solution[i]
+				if char == "R":
+					self.solution = self.solution[:i] + self.solution[i:i+1].replace("R", "r") + self.solution[i+1:]
+				elif char == "U":
+					self.solution = self.solution[:i] + self.solution[i:i+1].replace("U", "u") + self.solution[i+1:]
+				elif char == "L":
+					self.solution = self.solution[:i] + self.solution[i:i+1].replace("L", "l") + self.solution[i+1:]
+				elif char == "D":
+					self.solution = self.solution[:i] + self.solution[i:i+1].replace("D", "d") + self.solution[i+1:]
+		print(self.solution)
+
 
 
 
 if __name__ == "__main__":
+	#Hvis problemer, rens hjul og lad batteriet fuldt op
 	lr = LegoRobot("llllUdrruLdldlluRRRRRdrUUruulldRRdldlluluulldRurDDrdLLdlluRRRRRdrUUruulldRurDurrdLulldddllululDrdLdlluRRRRRdrUUdllulullDrddlluRRRRRdrU")
-	cross_detected = False
-	cross_detected2 = False
+#	lr = LegoRobot("uldruldruldruldruldruldruldruldruldruldruldruldruldruldr") #left test
+#	lr = LegoRobot("rdlurdlurdlurdlurdlurdlurdlurdlurdlurdlurdlurdlurdlurdlu") #right test
 	lr.solve()
 	print('Shutting down gracefully')
 	lr.mA.duty_cycle_sp = 0
