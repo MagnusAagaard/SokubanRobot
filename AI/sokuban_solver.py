@@ -166,12 +166,12 @@ class SokubanSolver:
                     if (self.map[i-1][j] == 'X'):
                         count += 1
                     if (self.map[i+1][j] == 'X'):
-                        count += 1
+                        count += 10
                     if (self.map[i][j-1] == 'X'):
-                        count += 1
+                        count += 100
                     if (self.map[i][j+1] == 'X'):
-                        count += 1
-                    if (count >= 2):
+                        count += 1000
+                    if (count == 101 or count == 111 or count == 1101 or count == 1001 or count == 1011 or count == 110 or count == 1010 or count == 1110):
                         self.map[i][j] = 'd'
 
     def find_goals(self):
