@@ -47,6 +47,7 @@ class LegoRobot:
 		#print('Shutting down gracefully')
 		self.mA.duty_cycle_sp = 0
 		self.mD.duty_cycle_sp = 0
+		sleep(1)
 		exit(0)
 
 	def follow_line(self, sensor, count = 0):
@@ -95,19 +96,20 @@ class LegoRobot:
 
 	def check_cross_can(self):
 		if self.sensorCross < 400:
+			print(self.sensorCross)
 			return True
 		else:
 			return False
 
-	def go_straight(self, dist):
-		self.mdiff.on_for_distance(self.TURN_SPEED, dist)
-		self._setup_motors()
+	#def go_straight(self, dist):
+	#	self.mdiff.on_for_distance(self.TURN_SPEED, dist)
+	#	self._setup_motors()
 
-	def turn_right(self):
-		dist=self.straight_right
-		self.go_straight(dist)
-		self.mdiff.turn_right(self.TURN_SPEED, 90)
-		self._setup_motors()
+	#def turn_right(self):
+	#	dist=self.straight_right
+	#	self.go_straight(dist)
+	#	self.mdiff.turn_right(self.TURN_SPEED, 90)
+	#	self._setup_motors()
 
 	def turn_right_new(self):
 	#	dist=self.straight_right
@@ -132,11 +134,11 @@ class LegoRobot:
 		sleep(0.03)
 
 
-	def turn_left(self):
-		dist=self.straight_left
-		self.go_straight(dist)
-		self.mdiff.turn_left(self.TURN_SPEED, 90)
-		self._setup_motors()
+	#def turn_left(self):
+	#	dist=self.straight_left
+	#	self.go_straight(dist)
+	#	self.mdiff.turn_left(self.TURN_SPEED, 90)
+	#	self._setup_motors()
 
 	def turn_around(self):
 		#print("turn")
@@ -222,6 +224,7 @@ if __name__ == "__main__":
 	print('Shutting down gracefully')
 	lr.mA.duty_cycle_sp = 0
 	lr.mD.duty_cycle_sp = 0
+	sleep(1)
 	exit(0)
 #	lr.turn_right_new()
 #	while True:
