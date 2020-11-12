@@ -204,8 +204,9 @@ class SokubanSolver:
             count += 1
             current_node_hash = next(iter(self.open_list))
             current_node = self.open_list.pop(current_node_hash)
-            if count % 100000 == 0:
+            if count % 10000 == 0:
                 self.trace_solution(current_node)
+                print(len(self.open_list))
             if self.check_solved(current_node):
                 sol = self.trace_solution(current_node)
                 print(count)
