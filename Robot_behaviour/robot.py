@@ -16,7 +16,7 @@ class LegoRobot:
 		self.solution = solution
 		self.simplify()
 		#Orientations: 1 = up, 2 = right, 3 = down, 4 = left
-		self.robot_orientation = 1
+		self.robot_orientation = 4
 		self.threshold_left = 35 #26
 		self.threshold_right = 50 #36
 		self.threshold = 25
@@ -31,7 +31,7 @@ class LegoRobot:
 		assert self.lightSensorCross.connected, "lightSensorCross(ColorSensor) is not connected"
 		assert self.lightSensorCan.connected, "lightSensorCan(ColorSensor) is not connected"
 		assert self.lightSensorLine.connected, "lightSensorLine(ColorSensor) is not conected"
-		self.BASE_SPEED = 50
+		self.BASE_SPEED = 40
 		self.TURN_SPEED = 25
 
 	def _setup_motors(self):
@@ -64,7 +64,7 @@ class LegoRobot:
 			#if not self.check_cross():
 			#	cross_left=True
 			#if cross_left:
-			if counter > 70:
+			if counter > 50:
 #				toc = time.perf_counter()
 #				print("Time: {} seconds".format(toc-tic))
 				if sensor == 1:
@@ -75,6 +75,7 @@ class LegoRobot:
 					cross_detected = self.check_cross_can()
 			else:
 				counter += 1
+			
 			self.mD.duty_cycle_sp = self.BASE_SPEED - 0.2*(self.sensorLine-self.threshold)
 			self.mA.duty_cycle_sp = self.BASE_SPEED + 0.2*(self.sensorLine-self.threshold)
 
@@ -90,6 +91,7 @@ class LegoRobot:
 
 	def check_cross(self):
 		if self.sensorCross < self.black + 25:
+			print("Cross")
 			return True
 		else:
 			return False
@@ -114,10 +116,13 @@ class LegoRobot:
 	def turn_right_new(self):
 	#	dist=self.straight_right
 	#	self.go_straight(dist)
-		sleep(0.07)
-		self.mD.duty_cycle_sp = -30
-		self.mA.duty_cycle_sp = 30
-		sleep(0.7)
+		sleep(0.13)
+		tic = time.perf_counter()
+		toc = tic
+		while (toc-tic)<0.5:
+			self.mD.duty_cycle_sp = -30
+			self.mA.duty_cycle_sp = 30
+			toc = time.perf_counter()
 		while self.lightSensorLine.value()>self.threshold_right:
 			sleep(0.01)
 	#	sleep(0.03)
@@ -126,9 +131,12 @@ class LegoRobot:
 	#	dist=self.straight_right
 	#	self.go_straight(dist)
 	#	sleep(0.02)
-		self.mD.duty_cycle_sp = 30
-		self.mA.duty_cycle_sp = -30
-		sleep(0.7)
+		tic = time.perf_counter()
+		toc = tic
+		while (toc-tic)<0.5:
+			self.mD.duty_cycle_sp = 30
+			self.mA.duty_cycle_sp = -30
+			toc = time.perf_counter()
 		while self.lightSensorLine.value()>self.threshold_left:
 			sleep(0.01)
 		sleep(0.03)
@@ -141,11 +149,15 @@ class LegoRobot:
 	#	self._setup_motors()
 
 	def turn_around(self):
-		#print("turn")
-		self.mD.duty_cycle_sp = -self.BASE_SPEED+23
-		self.mA.duty_cycle_sp = -self.BASE_SPEED-23
-		sleep(0.45)
-		#print("sleep done")
+		tic = time.perf_counter()
+		toc = tic
+		while (toc-tic)<0.45:
+			#self.mD.duty_cycle_sp = -self.BASE_SPEED+23
+			#self.mA.duty_cycle_sp = -self.BASE_SPEED-23
+			self.mD.duty_cycle_sp = -50+23
+			self.mA.duty_cycle_sp = -50-23
+			toc = time.perf_counter()
+		print("sleep done")
 		self.turn_left_new()
 		#self.mD.duty_cycle_sp = 40
 		#self.mA.duty_cycle_sp = -40
@@ -164,11 +176,18 @@ class LegoRobot:
 	def solve(self):
 		orientations = {'u': 1, 'r': 2, 'd': 3, 'l': 4, 'U': 1, 'R': 2, 'D': 3, 'L': 4}
 		self.follow_line(1)
+		i = 0
 		for step in self.solution:
 			#self.check_touch()
 			desired_ori=orientations.get(step)
 			ori_change = desired_ori - self.robot_orientation
 			self.robot_orientation = desired_ori
+			if i < len(self.solution)-1:
+				if ord(self.solution[i+1]) == ord(step) or ord(self.solution[i+1]) == ord(step)-32:
+					self.BASE_SPEED = 80
+				else:
+					self.BASE_SPEED = 40
+			i += 1
 			if (ori_change == 1 or ori_change == -3):
 				#print ("turning right")
 				self.turn_right_new()
@@ -213,6 +232,7 @@ class LegoRobot:
 
 if __name__ == "__main__":
 	#Hvis problemer, rens hjul og lad batteriet fuldt op
+	#Spænding skal være 8.05V før det virker
 
 	#Næste gang, lav vores straight om til at bruge noget andet til at køre frem. Enten sæt lys sensor ved aksen, eller lav med tid.
 	#En lys sensor i midten i stedet for 2, og så bare ikke have sleep efter den drejer til venstre men kun når den drejer til højre
