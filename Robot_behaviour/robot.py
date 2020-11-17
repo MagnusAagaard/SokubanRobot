@@ -32,7 +32,7 @@ class LegoRobot:
 		assert self.lightSensorCan.connected, "lightSensorCan(ColorSensor) is not connected"
 		assert self.lightSensorLine.connected, "lightSensorLine(ColorSensor) is not conected"
 		self.BASE_SPEED = 40
-		self.TURN_SPEED = 25
+		self.TURN_SPEED = 35
 
 	def _setup_motors(self):
 		self.mA.polarity = "normal"
@@ -120,8 +120,8 @@ class LegoRobot:
 		tic = time.perf_counter()
 		toc = tic
 		while (toc-tic)<0.5:
-			self.mD.duty_cycle_sp = -30
-			self.mA.duty_cycle_sp = 30
+			self.mD.duty_cycle_sp = -self.TURN_SPEED
+			self.mA.duty_cycle_sp = self.TURN_SPEED
 			toc = time.perf_counter()
 		while self.lightSensorLine.value()>self.threshold_right:
 			sleep(0.01)
@@ -134,12 +134,13 @@ class LegoRobot:
 		tic = time.perf_counter()
 		toc = tic
 		while (toc-tic)<0.5:
-			self.mD.duty_cycle_sp = 30
-			self.mA.duty_cycle_sp = -30
+			self.mD.duty_cycle_sp = self.TURN_SPEED
+			self.mA.duty_cycle_sp = -self.TURN_SPEED
 			toc = time.perf_counter()
 		while self.lightSensorLine.value()>self.threshold_left:
 			sleep(0.01)
-		sleep(0.03)
+		sleep(0.12)
+		print("does this fucking work")
 
 
 	#def turn_left(self):
@@ -169,6 +170,7 @@ class LegoRobot:
 		#	sleep(0.01)
 	
 	def move_can(self):
+		self.BASE_SPEED=40
 		self.follow_line(2)
 		self.turn_around()
 		self.follow_line(1, 70)
@@ -185,21 +187,26 @@ class LegoRobot:
 			if i < len(self.solution)-1:
 				if ord(self.solution[i+1]) == ord(step) or ord(self.solution[i+1]) == ord(step)-32:
 					self.BASE_SPEED = 80
+				elif ord(self.solution[i-1])-32 == ord(step):
+					self.BASE_SPEED = 80
 				else:
 					self.BASE_SPEED = 40
 			i += 1
 			if (ori_change == 1 or ori_change == -3):
 				#print ("turning right")
+				self.BASE_SPEED = 40
 				self.turn_right_new()
 				self.follow_line(1)
 				#print(self.robot_orientation)
 			elif (ori_change == 2 or ori_change == -2):
 				#print("180 no scope")
+				self.BASE_SPEED = 40
 				self.turn_around()
 				self.follow_line(1)
 				#print(self.robot_orientation)
 			elif (ori_change == -1 or ori_change == 3):
 				#print("turning left")
+				self.BASE_SPEED = 40
 				self.turn_left_new()
 				self.follow_line(1)
 				#print(self.robot_orientation)
