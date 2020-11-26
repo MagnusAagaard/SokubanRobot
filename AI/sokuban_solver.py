@@ -10,16 +10,12 @@ class Node:
         self.parent = parent
         self.hash = hash_val
         self.hCost = 0
-        self.calc_h_cost()
         if self.parent != None:
             self.gCost = parent.gCost + 1
             self.move = move
         else:
             self.gCost = 0
         self.fCost = self.hCost + self.gCost
-
-    def calc_h_cost(self):
-        self.hCost = 0
 
     def get_cans(self):
         cans_hash = self.hash[4:]
@@ -32,6 +28,9 @@ class Node:
         robot_hash = self.hash[:4]
         return (int(robot_hash[0:2]), int(robot_hash[2:4]))
 
+    def get_fcost(self):
+        return self.hCost + self.gCost
+
 
 class SokubanSolver:
     def __init__(self, map_file_path):
@@ -40,14 +39,11 @@ class SokubanSolver:
         self.goal_positions = list()
         self.robot_position = 0
         self._setup(map_file_path)
+        self.open_goals = self.goal_positions
         self.closed_list = {}
         self.open_list = {}
-        solution = self.breath_first()
-        if solution == -1:
-            print("Could not find solution!")
-        else:
-            print(solution)
-        #self.find_goals()
+        self.open_list_list = []
+        self.closed_list_list = []
 
     def _setup(self, map_file_path):
         with open(map_file_path) as f:
@@ -71,8 +67,6 @@ class SokubanSolver:
                         char = '.'
                     row_chars.append(char)
                     col += 1
-        #self.goal_positions = np.asarray(self.goal_positions)
-        #self.can_positions = np.asarray(self.can_positions)
         print("Map loaded:")
         self.deadlocks_detection()
         for r in self.map:
@@ -174,25 +168,97 @@ class SokubanSolver:
                     if (count == 101 or count == 111 or count == 1101 or count == 1001 or count == 1011 or count == 110 or count == 1010 or count == 1110):
                         self.map[i][j] = 'd'
 
-    def find_goals(self):
-        costs = []
-        cost = []
+    def check_closed_list(self, hash_val):
+        # Return false if hash exists in closed list
+        for node in self.closed_list_list:
+            if node.hash == hash_val:
+                return False
+        return True
 
-        for i in range(len(self.can_positions)):
-            can_cost = []
-            for j in range(len(self.goal_positions)):
-                can_cost.append(abs(self.can_positions[i][0] - self.goal_positions[j][0]) + abs(self.can_positions[i][1] - self.goal_positions[j][1]))
-            costs.append(can_cost)
+    def insert_in_closed_list(self, new_node):
+        for index, node in enumerate(self.open_list_list):
+            if node.get_fcost() > new_node.get_fcost():
+                self.open_list_list.insert(index, new_node)
+                return
+        self.open_list_list.append(new_node)
 
-        index = [i for i in range(len(self.can_positions))]
-        perm = itertools.permutations(index)
-        index = []
-        for i in perm:
-            index.append(i)
-        for i in index:
-            print(costs[i[0]])
-            cost.append(costs[0][i[0]] + costs[1][i[1]] + costs[2][i[2]] + costs[3][i[3]])
-        print(cost)
+    def find_open_goals(self, node):
+        cans = node.get_cans()
+        goals = self.goal_positions
+        open_goals = []
+        for goal in goals:
+            flag = True
+            for can in cans:
+                if can == goal:
+                    flag = False
+            if flag:
+                open_goals.append(goal)
+        return open_goals
+
+    def calc_h_cost(self, node):
+        cans = node.get_cans()
+        robot = node.get_robot()
+        min_dist_robot = 10000000
+        for can in cans:
+            dist = self.dist_to_point(robot, can)
+            if dist < min_dist_robot:
+                min_dist_robot = dist
+        total_goal_dist = 0
+        for can in cans:
+            min_dist_goal = 10000000
+            for goal in self.goal_positions:
+                dist = self.dist_to_point(can,goal)
+                if dist < min_dist_goal:
+                    min_dist_goal = dist
+            total_goal_dist += min_dist_goal
+
+        return (total_goal_dist + min_dist_robot + 9*len(self.open_goals))
+
+    def dist_to_point(self, robot, point):
+        return (abs(robot[0] - point[0]) + abs(robot[1] - point[1]))
+
+
+    def astar(self):
+        root_hash = self.create_hash(self.can_positions, self.robot_position)
+        root = Node(None, root_hash, None)
+        self.open_list_list.append(root)
+        previous_fcost = root.get_fcost()
+        previous_node = root
+        count = 0
+
+        while len(self.open_list_list):
+            count += 1
+            current_node = self.open_list_list.pop(0)
+            if count % 1000 == 0:
+                print(count)
+            if self.check_solved(current_node):
+                sol = self.trace_solution(current_node)
+                print(count)
+                return sol
+            self.closed_list_list.append(current_node)
+            rob = current_node.get_robot()
+            moves = [(1,0),(-1,0),(0,1),(0,-1)]
+            for move in moves:
+                cans = current_node.get_cans()
+                rob_new = [rob[0] + move[0], rob[1] + move[1]]
+                if move == (-1,0):
+                    translated_moves = 'u'
+                elif move == (1,0):
+                    translated_moves = 'd'
+                elif move == (0,1):
+                    translated_moves = 'r'
+                elif move== (0,-1):
+                    translated_moves = 'l'
+                child = Node(current_node, self.create_hash(cans, rob_new), translated_moves)
+                legal_move = self.check_legal_move(child, move)
+                if legal_move:
+                    child_hash = child.hash
+                    if self.check_closed_list(child_hash):
+                        self.open_goals = self.find_open_goals(child)
+                        child.hCost = self.calc_h_cost(child)
+                        self.insert_in_closed_list(child)
+            
+        return -1
 
     def breath_first(self):
         root_hash = self.create_hash(self.can_positions, self.robot_position)
@@ -206,7 +272,7 @@ class SokubanSolver:
             current_node = self.open_list.pop(current_node_hash)
             if count % 10000 == 0:
                 self.trace_solution(current_node)
-                print(len(self.open_list))
+                print(count)
             if self.check_solved(current_node):
                 sol = self.trace_solution(current_node)
                 print(count)
@@ -283,7 +349,7 @@ class SokubanSolver:
         reversed_moves = ""
         for i in range(len(moves),0,-1):
             reversed_moves+=moves[i-1]
-        print(len(reversed_moves))
+        #print(len(reversed_moves))
 
         return reversed_moves
 
@@ -309,16 +375,17 @@ class SokubanSolver:
             else:
                 hash_val += str(can[1])
         return hash_val
-
-        
-
-
     
 
 if __name__ == "__main__":
     #Problemer? Check hård og blød paranteser ;)
     map_file_path = "./AI/map.txt"
-    tic = time.perf_counter()
     solver = SokubanSolver(map_file_path)
+    tic = time.perf_counter()
+    solution = solver.astar()
+    if solution == -1:
+            print("Could not find solution!")
+        else:
+            print(solution)
     toc = time.perf_counter()
     print(f"Solved in {toc - tic:0.4f} seconds")
