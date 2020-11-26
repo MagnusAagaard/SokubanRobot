@@ -177,7 +177,7 @@ class SokubanSolver:
 
     def insert_in_closed_list(self, new_node):
         for index, node in enumerate(self.open_list_list):
-            if node.get_fcost() > new_node.get_fcost():
+            if node.get_fcost() >= new_node.get_fcost():
                 self.open_list_list.insert(index, new_node)
                 return
         self.open_list_list.append(new_node)
@@ -217,6 +217,48 @@ class SokubanSolver:
     def dist_to_point(self, robot, point):
         return (abs(robot[0] - point[0]) + abs(robot[1] - point[1]))
 
+    def astar_dict(self):
+        root_hash = self.create_hash(self.can_positions, self.robot_position)
+        root = Node(None, root_hash, None)
+        self.open_list[root_hash] = root
+        count = 0
+
+        while len(self.open_list):
+            count += 1
+            current_node_hash = next(iter(self.open_list))
+            current_node = self.open_list.pop(current_node_hash)
+            if count % 10000 == 0:
+                self.trace_solution(current_node)
+                print(count)
+            if self.check_solved(current_node):
+                sol = self.trace_solution(current_node)
+                print(count)
+                return sol
+            self.closed_list[current_node_hash] = current_node
+            rob = current_node.get_robot()
+            moves = [(1,0),(-1,0),(0,1),(0,-1)]
+            for move in moves:
+                cans = current_node.get_cans()
+                rob_new = [rob[0] + move[0], rob[1] + move[1]]
+                if move == (-1,0):
+                    translated_moves = 'u'
+                elif move == (1,0):
+                    translated_moves = 'd'
+                elif move == (0,1):
+                    translated_moves = 'r'
+                elif move== (0,-1):
+                    translated_moves = 'l'
+                child = Node(current_node, self.create_hash(cans, rob_new), translated_moves)
+                legal_move = self.check_legal_move(child, move)
+                if legal_move:
+                    child_hash = child.hash
+                    if self.closed_list.get(child_hash) == None:
+                        self.open_goals = self.find_open_goals(child)
+                        child.hCost = self.calc_h_cost(child)
+                        self.open_list[child_hash] = child
+                        self.open_list = dict(sorted(self.open_list.items(), key=lambda node: node[1].get_fcost()))
+            
+        return -1
 
     def astar(self):
         root_hash = self.create_hash(self.can_positions, self.robot_position)
@@ -382,10 +424,10 @@ if __name__ == "__main__":
     map_file_path = "./AI/map.txt"
     solver = SokubanSolver(map_file_path)
     tic = time.perf_counter()
-    solution = solver.astar()
+    solution = solver.astar_dict()
     if solution == -1:
-            print("Could not find solution!")
-        else:
-            print(solution)
+        print("Could not find solution!")
+    else:
+        print(solution)
     toc = time.perf_counter()
     print(f"Solved in {toc - tic:0.4f} seconds")
