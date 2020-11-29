@@ -430,7 +430,7 @@ if __name__ == "__main__":
     print(len("llDlLLLulDrrrrrurrdLLLLLLLDrdLrdrrruUdldlluuurrurrrddLuLLLLulDDrddrrruUruLLLLulDulD"))
     # A* solution with 3 terms heuristic map_2020.txt:
     print(len("llldLLLulDDrddrrruUdldlluuurrurrDLLLLulDrrrurrrrdLLrdLuLLLLLulDDurrdddrrruUruLLLLLulD"))
-    # A* solution with 2 terms heuristic map_2020.txt:
+    # A* solution with 2 terms heuristic map_2020.txt (same amount of steps as BFS, but another solution):
     print(len("llldLLLulDDrddrrruUdldlluLruurrurrDLLLLulDrrrurrrrdLLrdLuLLLLLDrddrrruUruLLLLulDulD"))
     solution = solver.astar_dict()
     if solution == -1:
