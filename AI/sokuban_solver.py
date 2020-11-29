@@ -212,7 +212,7 @@ class SokubanSolver:
                     min_dist_goal = dist
             total_goal_dist += min_dist_goal
 
-        return (total_goal_dist + min_dist_robot + 9*len(self.open_goals))
+        return (total_goal_dist + min_dist_robot)# + 10*len(self.open_goals))
 
     def dist_to_point(self, robot, point):
         return (abs(robot[0] - point[0]) + abs(robot[1] - point[1]))
@@ -421,9 +421,17 @@ class SokubanSolver:
 
 if __name__ == "__main__":
     #Problemer? Check hård og blød paranteser ;)
-    map_file_path = "./AI/map.txt"
+    map_file_path = "./AI/map_2020.txt"
     solver = SokubanSolver(map_file_path)
     tic = time.perf_counter()
+    # A star solution map.txt:
+    #print(len("lllldlluRUdRUdRRRdrUUruulldRRlddlluLuullDRurDDullDRdRRRdrUUruurrdLulDulldRddlllldlluRRRRRdrUUdlluLulDldRRRRdrU"))
+    # BFS solution map_2020.txt:
+    print(len("llDlLLLulDrrrrrurrdLLLLLLLDrdLrdrrruUdldlluuurrurrrddLuLLLLulDDrddrrruUruLLLLulDulD"))
+    # A* solution with 3 terms heuristic map_2020.txt:
+    print(len("llldLLLulDDrddrrruUdldlluuurrurrDLLLLulDrrrurrrrdLLrdLuLLLLLulDDurrdddrrruUruLLLLLulD"))
+    # A* solution with 2 terms heuristic map_2020.txt:
+    print(len("llldLLLulDDrddrrruUdldlluLruurrurrDLLLLulDrrrurrrrdLLrdLuLLLLLDrddrrruUruLLLLulDulD"))
     solution = solver.astar_dict()
     if solution == -1:
         print("Could not find solution!")
