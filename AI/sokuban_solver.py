@@ -4,6 +4,7 @@ import os
 import numpy as np
 import itertools
 import time
+import operator
 
 class Node:
     def __init__(self, parent, hash_val, move):
@@ -17,6 +18,12 @@ class Node:
             self.gCost = 0
         self.fCost = self.hCost + self.gCost
 
+    def __lt__(self, other):
+        if(self.get_fcost() < other.get_fcost()):
+            return True
+        else:
+            return False
+
     def get_cans(self):
         cans_hash = self.hash[4:]
         cans = list()
@@ -27,6 +34,9 @@ class Node:
     def get_robot(self):
         robot_hash = self.hash[:4]
         return (int(robot_hash[0:2]), int(robot_hash[2:4]))
+
+    def calc_fcost(self):
+        self.fCost = self.gCost + self.hCost
 
     def get_fcost(self):
         return self.hCost + self.gCost
@@ -212,7 +222,7 @@ class SokubanSolver:
                     min_dist_goal = dist
             total_goal_dist += min_dist_goal
 
-        return (total_goal_dist + min_dist_robot)# + 10*len(self.open_goals))
+        return (total_goal_dist + min_dist_robot) #+20*len(self.open_goals))
 
     def dist_to_point(self, robot, point):
         return (abs(robot[0] - point[0]) + abs(robot[1] - point[1]))
@@ -225,7 +235,7 @@ class SokubanSolver:
 
         while len(self.open_list):
             count += 1
-            current_node_hash = next(iter(self.open_list))
+            current_node_hash, _ = min(self.open_list.items(), key=lambda node: node[1].fCost)
             current_node = self.open_list.pop(current_node_hash)
             if count % 10000 == 0:
                 self.trace_solution(current_node)
@@ -255,8 +265,8 @@ class SokubanSolver:
                     if self.closed_list.get(child_hash) == None:
                         self.open_goals = self.find_open_goals(child)
                         child.hCost = self.calc_h_cost(child)
+                        child.calc_fcost()
                         self.open_list[child_hash] = child
-                        self.open_list = dict(sorted(self.open_list.items(), key=lambda node: node[1].get_fcost()))
             
         return -1
 
@@ -437,5 +447,6 @@ if __name__ == "__main__":
         print("Could not find solution!")
     else:
         print(solution)
+        print(len(solution))
     toc = time.perf_counter()
     print(f"Solved in {toc - tic:0.4f} seconds")

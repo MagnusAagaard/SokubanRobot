@@ -1,3 +1,4 @@
+import operator
 class Node:
     def __init__(self, parent, hash_val, move):
         self.parent = parent
@@ -31,15 +32,14 @@ node1 = Node(parent=None,hash_val="1",move=(1,2))
 node2 = Node(parent=None,hash_val="2",move=(1,2))
 node.fCost = 5
 node1.fCost = 10
-node2.fCost = 2
+node2.fCost = 3
 open_list = {}
 open_list["0"] = node
 open_list["1"] = node1
 open_list["2"] = node2
 print(open_list.keys())
-open_list = dict(sorted(open_list.items(), key=lambda node: node[1].fCost))
-node3 = Node(parent=None,hash_val="3",move=(1,2))
-node3.fCost = 7
-for index, value in enumerate(open_list):
-    if open_list.get(value).fCost > open_list.get("3"):
-        open_list.insert
+print(min(open_list.values(), key=operator.attrgetter('fCost')))
+#node_test = open_list.pop(min_key)
+#print(node_test.fCost)
+#node3 = Node(parent=None,hash_val="3",move=(1,2))
+#node3.fCost = 7
