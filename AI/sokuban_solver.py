@@ -5,6 +5,7 @@ import numpy as np
 import itertools
 import time
 import operator
+from guppy import hpy
 
 class Node:
     def __init__(self, parent, hash_val, move):
@@ -54,6 +55,7 @@ class SokubanSolver:
         self.open_list = {}
         self.open_list_list = []
         self.closed_list_list = []
+        self.h = hpy()
 
     def _setup(self, map_file_path):
         with open(map_file_path) as f:
@@ -78,7 +80,7 @@ class SokubanSolver:
                     row_chars.append(char)
                     col += 1
         print("Map loaded:")
-        self.deadlocks_detection()
+        #self.deadlocks_detection()
         for r in self.map:
             print(r)
 
@@ -222,7 +224,7 @@ class SokubanSolver:
                     min_dist_goal = dist
             total_goal_dist += min_dist_goal
 
-        return (total_goal_dist + min_dist_robot) #+20*len(self.open_goals))
+        return (total_goal_dist + min_dist_robot)# + 10*len(self.open_goals))
 
     def dist_to_point(self, robot, point):
         return (abs(robot[0] - point[0]) + abs(robot[1] - point[1]))
@@ -242,6 +244,7 @@ class SokubanSolver:
                 print(count)
             if self.check_solved(current_node):
                 sol = self.trace_solution(current_node)
+                print(self.h.heap())
                 print(count)
                 return sol
             self.closed_list[current_node_hash] = current_node
@@ -327,6 +330,7 @@ class SokubanSolver:
                 print(count)
             if self.check_solved(current_node):
                 sol = self.trace_solution(current_node)
+                print(self.h.heap())
                 print(count)
                 return sol
             self.closed_list[current_node_hash] = current_node
@@ -401,7 +405,7 @@ class SokubanSolver:
         reversed_moves = ""
         for i in range(len(moves),0,-1):
             reversed_moves+=moves[i-1]
-        #print(len(reversed_moves))
+        print(len(reversed_moves))
 
         return reversed_moves
 
@@ -431,7 +435,7 @@ class SokubanSolver:
 
 if __name__ == "__main__":
     #Problemer? Check hård og blød paranteser ;)
-    map_file_path = "./AI/map_2020.txt"
+    map_file_path = "./AI/map.txt"
     solver = SokubanSolver(map_file_path)
     tic = time.perf_counter()
     # A star solution map.txt:
